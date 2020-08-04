@@ -93,21 +93,3 @@ object Traversal {
     }
   }
 }
-
-// class PiOne[P[_, _], A, B, C] extends LensP[P, A, B, Tuple2[A, C], Tuple2[B, C]] {
-//   def apply(f: P[A, B])(implicit prof: Cartesian[P]): P[Tuple2[A, C], Tuple2[B, C]] = {
-//     def view(xy: Tuple2[A, C]): A = xy._1
-//     def update(zxy: Tuple2[B, Tuple2[A, C]]): Tuple2[B, C] = (zxy._1, (zxy._2)._2)
-
-//     prof.dimap(utils.fork(view)(identity _))(update)(prof.first(f))
-//   }
-// }
-
-// class PiOne[A, B, C] {
-//   def apply[P[_, _]](f: P[A, B])(implicit prof: Cartesian[P]): P[Tuple2[A, C], Tuple2[B, C]] = {
-//     def view(xy: Tuple2[A, C]): A = xy._1
-//     def update(zxy: Tuple2[B, Tuple2[A, C]]): Tuple2[B, C] = (zxy._1, (zxy._2)._2)
-
-//     prof.dimap(utils.fork(view)(identity _))(update)(prof.first(f))
-//   }
-// }
