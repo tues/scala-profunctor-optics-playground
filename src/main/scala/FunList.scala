@@ -1,11 +1,16 @@
 // https://twanvl.nl/blog/haskell/non-regular1
+
+// http://www.cs.ioc.ee/~tarmo/papers/aplas05.pdf
+// "General stream functions `Str A → Str B` are thus in natural bijection with maps `Nat ⇒ A → Nat ⇒ B`, which, in turn,
+// are in natural bijection with maps `(Nat ⇒ A) × Nat → B`, i.e., `FunArg Nat A → B` where `FunArg S A = (S ⇒ A) × S`."
+
 sealed trait FunList[A, B, T]
 case class Done[A, B, T](t: T) extends FunList[A, B, T]
 case class More[A, B, T](a: A, fl: FunList[A, B, B => T]) extends FunList[A, B, T]
 
 object FunList {
 
-  def single[A, B](a: A): FunList[A, B, B] = More(a, Done(identity))
+  def single[A, B](a: A): More[A, B, B] = More(a, Done(identity))
 
   def fuse[B, T](bbt: FunList[B, B, T]): T = bbt match {
     case Done(t) => t
@@ -31,6 +36,36 @@ object FunList {
     def mid(): P[EFunList[A, C, T], EFunList[B, C, T]] = cocart.right(monoid.par(p)(rec(p)))
 
     cocart.dimap(lmap)(rmap)(mid)
+  }
+
+  implicit def funListFunctor[X, Y]: Functor[FunList[X, Y, *]] = new Functor[FunList[X, Y, *]] {
+    def fmap[A, B](f: => A => B)(a: FunList[X, Y, A]): FunList[X, Y, B] = a match {
+      case Done(t) => Done(f(t))
+      case More(x, l) =>
+        def compf(g: Y => A) = f.compose(g)
+        More(x, fmap(compf _)(l))
+    }
+  }
+
+  implicit def funListApplicative[X, Y]: Applicative[FunList[X, Y, *]] = new Applicative[FunList[X, Y, *]] {
+    def pure[A](a: A): FunList[X, Y, A] = Done(a)
+
+    // Need this to avoid infinite recursion (default `Applicative.fmap` uses `ap`)
+    override def fmap[A, B](f: => A => B)(a: FunList[X, Y, A]): FunList[X, Y, B] = a match {
+      case Done(t) => Done(f(t))
+      case More(x, l) =>
+        def compf(g: Y => A) = f.compose(g)
+        More(x, fmap(compf _)(l))
+    }
+
+    def ap[A, B](f: FunList[X, Y, A => B])(a: FunList[X, Y, A]): FunList[X, Y, B] = f match {
+      case Done(g) =>
+        println(s"g: $g")
+        fmap(g)(a)
+      case More(x, l) =>
+        def flip(yab: Y => (A => B)): A => (Y => B) = (a: A) => ((y: Y) => yab(y)(a))
+        More(x, ap(fmap(flip)(l))(a))
+    }
   }
 
 }

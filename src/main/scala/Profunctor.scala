@@ -1,12 +1,12 @@
 trait Functor[F[_]] {
-  def fmap[A, B](f: A => B)(a: F[A]): F[B]
+  def fmap[A, B](f: => A => B)(a: F[A]): F[B]
 }
 
 trait Applicative[F[_]] extends Functor[F] {
   def pure[A](a: A): F[A]
   def ap[A, B](f: F[A => B])(a: F[A]): F[B]
 
-  def fmap[A, B](f: A => B)(a: F[A]): F[B] = ap(pure(f))(a)
+  def fmap[A, B](f: => A => B)(a: F[A]): F[B] = ap(pure(f))(a)
 }
 
 trait Profunctor[P[_, _]] {
@@ -55,7 +55,7 @@ object Profunctor {
 object implicits {
 
   implicit object ListFunctor extends Functor[List] {
-    def fmap[A, B](f: A => B)(a: List[A]): List[B] = a.map(f)
+    def fmap[A, B](f: => A => B)(a: List[A]): List[B] = a.map(f)
   }
 
   implicit object ListApplicative extends Applicative[List] {

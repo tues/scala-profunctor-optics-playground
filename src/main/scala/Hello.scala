@@ -102,7 +102,8 @@ object Hello extends App {
   val listElemsTraversal = new Traversal[String, String, List[String], List[String]] {
     def extract(aa: List[String]): FunList[String, String, List[String]] = aa match {
       // I don't have `Functor` and `Applicative` instances for `FunList` yet so let's cheat...
-      case a :: b :: Nil => More(b, More(a, Done((a1: String) => (b1: String) => a1 :: b1 :: Nil)))
+      case a :: Nil => More(a, Done((a1: String) => a1 :: Nil))
+      case a :: b :: Nil => More(b, More(a, Done((b1: String) => (a1: String) => b1 :: a1 :: Nil)))
     }
   }
 
