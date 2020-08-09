@@ -6,7 +6,11 @@
 
 sealed trait FunList[A, B, T]
 case class Done[A, B, T](t: T) extends FunList[A, B, T]
-case class More[A, B, T](a: A, fl: FunList[A, B, B => T]) extends FunList[A, B, T]
+case class More[A, B, T](a: A, fl: FunList[A, B, B => T]) extends FunList[A, B, T] {
+  // Experimental
+  def wrap[X](a1: A)(f: (B => T) => (B => B => T)): More[A, B, T] =
+    More(a1, More(a, implicitly[Functor[FunList[A, B, *]]].fmap(f)(fl)))
+}
 
 object FunList {
 

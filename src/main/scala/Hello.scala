@@ -117,4 +117,25 @@ object Hello extends App {
   println(encloseReverseNames(person))
   // Person(<Kowalski> <Jan>,Some(32))
 
+  val tree = Node(5,
+    Node(3, EmptyTree, EmptyTree),
+    Node(8, EmptyTree, EmptyTree)
+  )
+
+  def list2(f: Int => List[Int]): (Int => Int => List[Int]) = (x: Int) => (y: Int) => x :: f(y)
+  def list3(f: Int => Int => List[Int]): (Int => Int => Int => List[Int]) = (x: Int) => (y: Int) => (z: Int) => x :: f(y)(z)
+
+  val three = More(3, Done[Int, Int, Int => List[Int]]((x: Int) => x :: Nil))
+  val five = three.wrap(5)((f: Int => List[Int]) => (x: Int) => (y: Int) => list2(f)(x)(y))
+  // val eight = five.wrap(8)((f: Int => (Int => List[Int])) => (x: Int) => ((y: Int) => ((z: Int) => list3(f)(x)(y)(z))))
+
+  def curry[A, B, C, D](f: B => C)(g: A => (C => D)): A => (B => D) = (a: A) => (b: B) => g(a)(f(b))
+  def append[T](t: T)(l: List[T]): List[T] = t :: l
+
+  val clist2 = curry((i: Int) => i :: Nil)(append)
+  // val clist3 = curry[Int, Int, Int => List[Int], Int => Int => List[Int]](Function.uncurried(clist2))(append)
 }
+
+sealed trait Tree[+T]
+case object EmptyTree extends Tree[Any]
+case class Node[+T](value: T, left: Tree[T], right: Tree[T]) extends Tree[T]
