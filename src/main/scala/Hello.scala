@@ -2,8 +2,37 @@ import implicits._
 
 case class Person(name: String, age: Option[Int])
 
-object Hello extends App {
+class TListFunList[X] {
+  def ap[A, B] = FunList.funListApplicative[X, X].ap[A, B] _
+  def cons[T](t: T): FunList[T, T, List[T] => List[T]] = More(t, Done((t1: T) => (l: List[T]) => t1 :: l))
+}
 
+object Hello extends App {
+  println("")
+
+  new LensPlayground()
+
+  println("")
+}
+
+class FunListPlayground {
+  val slfl = new TListFunList[String]
+  import slfl._
+
+  // val pfl: FunList[String, String, List[String] => List[String]] = Done((l: List[String]) => l.map(_.reverse))
+  // val pfl2: FunList[String, String, List[String] => List[String]] = More("baz", Done((s: String) => (l: List[String]) => s :: l))
+  // val sfl1: FunList[String, String, List[String]] = More("foo", Done((a1: String) => a1 :: Nil))
+
+  val fl0: FunList[String, String, List[String]] = Done(Nil)
+  val fl1 = ap(cons("foo"))(fl0)
+  val fl2 = ap(cons("bar"))(fl1)
+  val fl3 = ap(cons("baz"))(fl2)
+  val fl4 = ap(cons("fnord"))(fl3)
+  println(FunList.fuse(fl4))
+  // List(fnord, baz, bar, foo)
+}
+
+class LensPlayground {
   val as = List(1, 2, 3)
   val fs = List[Int => Int](
     _ + 10,
@@ -43,6 +72,13 @@ object Hello extends App {
   }
 
   val splitWords = Lens.c2p(splitWordsLens)
+
+  val splitCharsLens = new Lens[List[String], List[String], String, String] {
+    def view(s: String): List[String] = s.map(_.toString).toList
+    def update(u: (List[String], String)): String = u._1.mkString(" ")
+  }
+
+  val splitChars = Lens.c2p(splitCharsLens)
 
   def reverseList(l: List[String]) = l.reverse
   val swapWords = splitWords(reverseList _)
@@ -97,45 +133,55 @@ object Hello extends App {
 
   // *** Traversal ***
 
-  val listFooBar = List("foo", "bar")
+  val listFooBar = List("foo", "bar", "baz", "fnord")
 
   val listElemsTraversal = new Traversal[String, String, List[String], List[String]] {
+    val slfl = new TListFunList[String]
+    import slfl._
+
     def extract(aa: List[String]): FunList[String, String, List[String]] = aa match {
-      // I don't have `Functor` and `Applicative` instances for `FunList` yet so let's cheat...
-      case a :: Nil => More(a, Done((a1: String) => a1 :: Nil))
-      case a :: b :: Nil => More(b, More(a, Done((b1: String) => (a1: String) => b1 :: a1 :: Nil)))
+      case Nil => Done(Nil)
+      case a :: tail => ap(cons(a))(extract(tail))
     }
   }
 
   val listElems = Traversal.c2p(listElemsTraversal)
+
+  def listElemsTraversalT[T] = new Traversal[T, T, List[T], List[T]] {
+    val tlfl = new TListFunList[T]
+    import tlfl._
+
+    def extract(aa: List[T]): FunList[T, T, List[T]] = aa match {
+      case Nil => Done(Nil)
+      case a :: tail => ap(cons(a))(extract(tail))
+    }
+  }
+
+  def listElemsT[T] = Traversal.c2p(listElemsTraversalT[T])
+
   def enclose(s: String) = s"<$s>"
   val encloseStrings = listElems(enclose _)
   println(encloseStrings(listFooBar))
-  // List(<foo>, <bar>)
+  // List(<foo>, <bar>, <baz>, <fnord>)
 
-  val encloseReverseNames = personName(splitWords(encloseStrings.compose(reverseList _)))
+  val encloseReverseNames = personName(splitChars(encloseStrings.compose(reverseList _)))
   println(encloseReverseNames(person))
   // Person(<Kowalski> <Jan>,Some(32))
 
-  val tree = Node(5,
-    Node(3, EmptyTree, EmptyTree),
-    Node(8, EmptyTree, EmptyTree)
-  )
+  val enclosePeopleNames = listElemsT[Person](personName(enclose _))
 
-  def list2(f: Int => List[Int]): (Int => Int => List[Int]) = (x: Int) => (y: Int) => x :: f(y)
-  def list3(f: Int => Int => List[Int]): (Int => Int => Int => List[Int]) = (x: Int) => (y: Int) => (z: Int) => x :: f(y)(z)
-
-  val three = More(3, Done[Int, Int, Int => List[Int]]((x: Int) => x :: Nil))
-  val five = three.wrap(5)((f: Int => List[Int]) => (x: Int) => (y: Int) => list2(f)(x)(y))
-  // val eight = five.wrap(8)((f: Int => (Int => List[Int])) => (x: Int) => ((y: Int) => ((z: Int) => list3(f)(x)(y)(z))))
-
-  def curry[A, B, C, D](f: B => C)(g: A => (C => D)): A => (B => D) = (a: A) => (b: B) => g(a)(f(b))
-  def append[T](t: T)(l: List[T]): List[T] = t :: l
-
-  val clist2 = curry((i: Int) => i :: Nil)(append)
-  // val clist3 = curry[Int, Int, Int => List[Int], Int => Int => List[Int]](Function.uncurried(clist2))(append)
+  val people = List(person, Person("Grzegorz Brzęczyszczykiewicz", None))
+  println(enclosePeopleNames(people))
+  // List(Person(<Jan Kowalski>,Some(32)), Person(<Grzegorz Brzęczyszczykiewicz>,None))
 }
 
 sealed trait Tree[+T]
 case object EmptyTree extends Tree[Any]
 case class Node[+T](value: T, left: Tree[T], right: Tree[T]) extends Tree[T]
+
+object TreePlayground {
+  val tree = Node(5,
+    Node(3, EmptyTree, EmptyTree),
+    Node(8, EmptyTree, EmptyTree)
+  )
+}
