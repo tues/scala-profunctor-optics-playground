@@ -18,7 +18,7 @@ trait Profunctor[P[_, _]] {
 
 case class Star[F[_], A, B](run: A => F[B])
 case class Costar[F[_], A, B](run: F[A] => B)
-case class Bistar[F[_], G[_], A, B](run: F[A] => G[B])
+case class Bistar[F[_], G[_], A, B](run: F[A] => G[B]) // should be Prostar (?)
 
 trait Cartesian[P[_, _]] extends Profunctor[P] {
   def first[A, B, C](p: P[A, B]): P[(A, C), (B, C)]

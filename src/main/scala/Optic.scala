@@ -8,6 +8,8 @@ trait LensP[A, B, AA, BB] {
 }
 
 object Lens {
+  // AA = S
+  // BB = T
   def c2p[A, B, AA, BB](lens: Lens[A, B, AA, BB]): LensP[A, B, AA, BB] = new LensP[A, B, AA, BB] {
     def apply[P[_, _]](f: P[A, B])(implicit prof: Cartesian[P]): P[AA, BB] = {
       prof.dimap(utils.fork(lens.view)(identity _))(lens.update)(prof.first(f))
@@ -25,7 +27,7 @@ object utils {
 }
 
 trait Prism[A, B, AA, BB] {
-  def match2(aa: AA): Either[BB, A]
+  def match2(aa: AA): Either[BB, A] // match
   def build(b: B): BB
 }
 
@@ -36,7 +38,7 @@ trait PrismP[A, B, AA, BB] {
 object Prism {
   def c2p[A, B, AA, BB](prism: Prism[A, B, AA, BB]): PrismP[A, B, AA, BB] = new PrismP[A, B, AA, BB] {
     def apply[P[_, _]](f: P[A, B])(implicit prof: Cocartesian[P]): P[AA, BB] = {
-      prof.dimap(prism.match2)(utils.either((bb: BB) => bb)(prism.build _))(prof.right(f))
+      prof.dimap(prism.match2)(utils.either(identity[BB])(prism.build _))(prof.right(f))
     }
   }
 }

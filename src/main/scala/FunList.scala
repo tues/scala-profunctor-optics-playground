@@ -4,6 +4,11 @@
 // "General stream functions `Str A → Str B` are thus in natural bijection with maps `Nat ⇒ A → Nat ⇒ B`, which, in turn,
 // are in natural bijection with maps `(Nat ⇒ A) × Nat → B`, i.e., `FunArg Nat A → B` where `FunArg S A = (S ⇒ A) × S`."
 
+// https://www.schoolofhaskell.com/school/to-infinity-and-beyond/pick-of-the-week/cellular-automata
+// Relation between FunList, Bazaar and Store comonad
+
+// https://stackoverflow.com/questions/44310458/what-are-simple-definitions-for-control-lens-traversals-partsof-holesof-and-si
+
 sealed trait FunList[A, B, T]
 case class Done[A, B, T](t: T) extends FunList[A, B, T]
 case class More[A, B, T](a: A, fl: FunList[A, B, B => T]) extends FunList[A, B, T] {
