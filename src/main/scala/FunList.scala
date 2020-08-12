@@ -11,11 +11,7 @@
 
 sealed trait FunList[A, B, T]
 case class Done[A, B, T](t: T) extends FunList[A, B, T]
-case class More[A, B, T](a: A, fl: FunList[A, B, B => T]) extends FunList[A, B, T] {
-  // Experimental
-  def wrap[X](a1: A)(f: (B => T) => (B => B => T)): More[A, B, T] =
-    More(a1, More(a, implicitly[Functor[FunList[A, B, *]]].fmap(f)(fl)))
-}
+case class More[A, B, T](a: A, fl: FunList[A, B, B => T]) extends FunList[A, B, T]
 
 object FunList {
 
@@ -69,7 +65,6 @@ object FunList {
 
     def ap[A, B](f: FunList[X, Y, A => B])(a: FunList[X, Y, A]): FunList[X, Y, B] = f match {
       case Done(g) =>
-        println(s"g: $g")
         fmap(g)(a)
       case More(x, l) =>
         def flip(yab: Y => (A => B)): A => (Y => B) = (a: A) => ((y: Y) => yab(y)(a))
